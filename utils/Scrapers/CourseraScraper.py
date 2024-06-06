@@ -41,25 +41,33 @@ class CourseraScraper:
         courses = []
 
         for card in cards:
-            title_link = card.find("a", {"data-track": "true"})
-            title = title_link.find("h3", class_="cds-CommonCard-title").text.strip() if title_link else ""
-            course_url = self.base_url + title_link["href"] if title_link else ""
-
-            description_tag = card.find("p", class_="cds-CommonCard-bodyContent")
-            description = description_tag.text.strip() if description_tag else ""
-
-            rating_tag = card.find("div", class_="cds-CommonCard-ratings")
-            rating = rating_tag.text.strip() if rating_tag else ""
-
-            image_tag = card.find("img")
-            image_url = image_tag["src"] if image_tag else ""
-
-            courses.append({
-                "Image": image_url,
-                "Title": title,
-                "Description": description,
-                "Score": rating,
-                "CourseLink": course_url
-            })
+            course_data = self.extract_course_data(card)
+            courses.append(course_data)
 
         return courses
+
+    @staticmethod
+    def extract_course_data(card):
+        image_element = card.find('img')
+        image_url = image_element['src'] if image_element else 'No image found'
+        title_element = card.find('a', class_='cds-CommonCard-titleLink')
+        title = title_element.text.strip() if title_element else 'No title found'
+        course_url = f"https://www.coursera.org{title_element['href']}" if title_element else ''
+
+        body_content_element = card.find('div', class_='cds-CommonCard-bodyContent')
+        description_element = body_content_element.find('p') if body_content_element else None
+        description = description_element.text.strip() if description_element else ''
+
+        skills_element = body_content_element.find('b', class_='css-14m26ju') if body_content_element else None
+        skills = skills_element.next_sibling.strip() if skills_element else ''
+
+        rating_element = card.find('div', class_='css-1vsx0as')
+        rating = rating_element.text.strip() if rating_element else ''
+
+        return {
+            "Image": image_url,
+            "Title": title,
+            "Description": skills,
+            "Score": rating,
+            "CourseLink": course_url
+        }
